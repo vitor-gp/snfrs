@@ -21,6 +21,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
+    discord_user_id = Column(String, unique=True, index=True, nullable=True)  # Discord user ID
+    discord_username = Column(String, nullable=True)  # Discord username
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -39,7 +41,9 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(String)
-    event_date = Column(DateTime(timezone=True), nullable=False)
+    start_time = Column(DateTime(timezone=True), nullable=False)  # Event start time
+    end_time = Column(DateTime(timezone=True), nullable=False)    # Event end time
+    discord_channel_id = Column(String, nullable=True)  # Discord channel where event happens
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -3,15 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import models
 from app.database import engine
-from app.routers import auth, events, users
+from app.routers import auth, events, users, discord
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Event Attendance API",
-    description="API for tracking event attendance every Thursday",
-    version="1.0.0"
+    description="API for tracking event attendance with Discord bot integration",
+    version="2.0.0"
 )
 
 # Configure CORS
@@ -27,14 +27,21 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(events.router)
+app.include_router(discord.router)
 
 
 @app.get("/")
 def read_root():
     return {
-        "message": "Welcome to Event Attendance API",
+        "message": "Welcome to Event Attendance API with Discord Integration",
         "docs": "/docs",
-        "version": "1.0.0"
+        "version": "2.0.0",
+        "features": [
+            "Time-based attendance (only during events)",
+            "Discord bot integration",
+            "JWT authentication",
+            "Event management"
+        ]
     }
 
 
