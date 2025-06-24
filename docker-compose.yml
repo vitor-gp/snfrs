@@ -70,7 +70,7 @@ services:
     networks:
       - app-network
     volumes:
-      - ./discord_bot.py:/app/discord_bot.py
+      - ./bot:/app/bot
 
 networks:
   app-network:
