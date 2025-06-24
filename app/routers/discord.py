@@ -9,18 +9,54 @@ from app.database import get_db
 router = APIRouter(prefix="/discord", tags=["discord"])
 
 
-@router.post("/users/register", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@router.post("/users/register", response_model=schemas.DiscordRegistrationResponse)
 def register_discord_user(
     user: schemas.UserCreateDiscord,
     db: Session = Depends(get_db)
 ):
-    """Register a Discord user"""
-    # Check if user already exists
-    existing_user = crud.get_user_by_discord_id(db, user.discord_user_id)
-    if existing_user:
-        return existing_user
+    """Register or update a Discord user"""
+    db_user, is_new, changes = crud.upsert_discord_user(db=db, user=user)  # type: ignore
     
-    return crud.create_discord_user(db=db, user=user)
+    if is_new:
+        message = f"🎉 Welcome {user.name}! Your Discord account has been successfully registered."
+    elif changes:
+        changes_str = ", ".join(changes)
+        message = f"✅ Profile updated for {user.name}! Changes: {changes_str}"
+    else:
+        message = f"👋 Welcome back {user.name}! Your profile is already up to date."
+    
+    return schemas.DiscordRegistrationResponse(
+        user=db_user,
+        is_new_user=is_new,
+        message=message,
+        changes=changes if changes else None
+    )
+
+
+@router.post("/events/create", response_model=schemas.Event)
+def create_event_discord(
+    event: schemas.EventCreate,
+    discord_user_id: str,
+    db: Session = Depends(get_db)
+):
+    """Create an event via Discord (requires admin status in database)"""
+    # Check if user exists and is admin
+    user = crud.get_user_by_discord_id(db, discord_user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Discord user not registered. Please register first with /register."
+        )
+    
+    if not getattr(user, 'is_admin', False):
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can create events. Use /make_admin command to become admin."
+        )
+    
+    # Create the event
+    db_event = crud.create_event(db=db, event=event)
+    return db_event
 
 
 @router.get("/users/{discord_user_id}", response_model=schemas.User)
@@ -184,4 +220,29 @@ def get_event_attendees_discord(
             if attendee.discord_user_id  # Only show Discord users
         ],
         "total_attendees": len([a for a in attendees if a.discord_user_id])
-    } 
+    }
+
+
+@router.post("/admin/make-admin", response_model=schemas.AdminResponse)
+def make_admin_discord(
+    request: schemas.MakeAdminRequest,
+    db: Session = Depends(get_db)
+):
+    """Make a Discord user admin with password verification"""
+    user, success, message = crud.make_user_admin(
+        db=db, 
+        discord_user_id=request.discord_user_id, 
+        password=request.password
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=400, 
+            detail=message
+        )
+    
+    return schemas.AdminResponse(
+        message=message,
+        user=user,
+        success=success
+    ) 

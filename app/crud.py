@@ -40,12 +40,12 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
 
 
 def create_discord_user(db: Session, user: schemas.UserCreateDiscord) -> models.User:
-    # For Discord users, create a temporary password if no email provided
+    # For Discord users, create a temporary password
     temp_password = f"discord_{user.discord_user_id}_{datetime.now().timestamp()}"
     hashed_password = get_password_hash(temp_password)
     
     db_user = models.User(
-        email=user.email or f"{user.discord_user_id}@discord.temp",
+        email=user.email,  # Can be None for Discord users
         name=user.name,
         discord_user_id=user.discord_user_id,
         discord_username=user.discord_username,
@@ -55,6 +55,45 @@ def create_discord_user(db: Session, user: schemas.UserCreateDiscord) -> models.
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def upsert_discord_user(db: Session, user: schemas.UserCreateDiscord) -> tuple[models.User, bool, List[str]]:
+    """
+    Create or update a Discord user based on discord_user_id.
+    Returns (user, is_new, changes) where:
+    - is_new indicates if this was a new user creation
+    - changes is a list of fields that were updated with before/after values
+    """
+    # Check if user already exists
+    existing_user = get_user_by_discord_id(db, user.discord_user_id)
+    
+    if existing_user:
+        # Update existing user if any information has changed
+        changes = []
+        
+        if existing_user.name != user.name:
+            changes.append(f"name: '{existing_user.name}' → '{user.name}'")
+            setattr(existing_user, 'name', user.name)
+            
+        if existing_user.discord_username != user.discord_username:
+            changes.append(f"discord username: '{existing_user.discord_username}' → '{user.discord_username}'")
+            setattr(existing_user, 'discord_username', user.discord_username)
+            
+        # Update email if provided and different
+        if user.email and existing_user.email != user.email:
+            old_email = existing_user.email or "None"
+            changes.append(f"email: '{old_email}' → '{user.email}'")
+            setattr(existing_user, 'email', user.email)
+            
+        if changes:
+            setattr(existing_user, 'updated_at', datetime.now())
+            db.commit()
+            db.refresh(existing_user)
+            
+        return existing_user, False, changes
+    else:
+        # Create new user
+        new_user = create_discord_user(db, user)
+        return new_user, True, []
 
 
 def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate) -> Optional[models.User]:
@@ -275,4 +314,28 @@ def check_discord_user_attendance(db: Session, discord_user_id: str, event_id: i
     if not db_user or not db_event:
         return False
     
-    return db_event in db_user.attended_events 
+    return db_event in db_user.attended_events
+
+
+# Admin CRUD operations
+def make_user_admin(db: Session, discord_user_id: str, password: str) -> tuple[Optional[models.User], bool, str]:
+    """Make a Discord user admin if password is correct"""
+    # Check password
+    if password != "123":
+        return None, False, "Invalid password"
+    
+    # Get user by Discord ID
+    db_user = get_user_by_discord_id(db, discord_user_id)
+    if not db_user:
+        return None, False, "User not found. Please register first using /register"
+    
+    # Check if already admin
+    if db_user.is_admin:
+        return db_user, False, f"{db_user.name} is already an admin"
+    
+    # Make user admin
+    db_user.is_admin = True
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user, True, f"🎉 {db_user.name} is now an admin!" 

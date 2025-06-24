@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, validator
 
 # User schemas
 class UserBase(BaseModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
     name: str
     discord_user_id: Optional[str] = None
     discord_username: Optional[str] = None
@@ -29,11 +29,13 @@ class UserUpdate(BaseModel):
     discord_user_id: Optional[str] = None
     discord_username: Optional[str] = None
     is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
 
 
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -135,9 +137,27 @@ class TokenData(BaseModel):
 
 
 # Discord-specific schemas
+class DiscordRegistrationResponse(BaseModel):
+    user: User
+    is_new_user: bool
+    message: str
+    changes: Optional[List[str]] = None
+
 class DiscordEventNotification(BaseModel):
     event_id: int
     title: str
     channel_id: Optional[str]
     message: str
-    action: str  # "starting", "ending", "reminder" 
+    action: str  # "starting", "ending", "reminder"
+
+
+# Admin schemas
+class MakeAdminRequest(BaseModel):
+    discord_user_id: str
+    password: str
+
+
+class AdminResponse(BaseModel):
+    message: str
+    user: User
+    success: bool 
