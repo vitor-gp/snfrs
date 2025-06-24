@@ -289,5 +289,67 @@ async def setup(bot):
 """
 
 if __name__ == "__main__":
-    # Run the simulation
-    asyncio.run(simulate_discord_interaction()) 
+    import discord
+    from discord.ext import commands
+    import asyncio
+
+    TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+    if not TOKEN:
+        raise ValueError("DISCORD_BOT_TOKEN environment variable is required")
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+
+    bot = commands.Bot(command_prefix="!", intents=intents)
+    api_bot = DiscordBot()
+
+    @bot.event
+    async def on_ready():
+        print(f"Logged in as {bot.user} (ID: {bot.user.id})")
+        print("------ Bot is online and ready to receive commands ------")
+
+    @bot.command(name='register')
+    async def register(ctx, *, name: str = None):
+        msg = type('Msg', (), {
+            'content': f"!register {name or ''}",
+            'author': ctx.author,
+            'channel': ctx.channel
+        })()
+        response = await api_bot.handle_command(msg)
+        if response:
+            await ctx.send(response)
+
+    @bot.command(name='events')
+    async def events(ctx):
+        msg = type('Msg', (), {
+            'content': "!events",
+            'author': ctx.author,
+            'channel': ctx.channel
+        })()
+        response = await api_bot.handle_command(msg)
+        if response:
+            await ctx.send(response)
+
+    @bot.command(name='attend')
+    async def attend(ctx, event_id: int):
+        msg = type('Msg', (), {
+            'content': f"!attend {event_id}",
+            'author': ctx.author,
+            'channel': ctx.channel
+        })()
+        response = await api_bot.handle_command(msg)
+        if response:
+            await ctx.send(response)
+
+    @bot.command(name='status')
+    async def status(ctx):
+        msg = type('Msg', (), {
+            'content': "!status",
+            'author': ctx.author,
+            'channel': ctx.channel
+        })()
+        response = await api_bot.handle_command(msg)
+        if response:
+            await ctx.send(response)
+
+    bot.run(TOKEN) 

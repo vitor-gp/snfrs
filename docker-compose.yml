@@ -1,21 +1,16 @@
-version: '3.8'
-
 services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.api
       target: production
     ports:
       - "8000:8000"
     volumes:
       - ./app:/app/app
       - ./data:/app/data
-    environment:
-      - DATABASE_URL=sqlite:///./data/app.db
-      - SECRET_KEY=your-secret-key-change-in-production
-      - ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -23,11 +18,27 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - app-network
+
+  discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.discord
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - app-network
 
   api-dev:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.api
       target: builder
     ports:
       - "8001:8000"
@@ -35,13 +46,35 @@ services:
       - ./app:/app/app
       - ./data:/app/data
       - ./tests:/app/tests
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=sqlite:///./data/app_dev.db
       - SECRET_KEY=dev-secret-key
-      - ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=30
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
+    networks:
+      - app-network
+
+  discord-bot-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.discord
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://api-dev:8000
+    depends_on:
+      - api-dev
+    restart: unless-stopped
+    networks:
+      - app-network
+    volumes:
+      - ./discord_bot.py:/app/discord_bot.py
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   data:
