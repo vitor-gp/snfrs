@@ -79,6 +79,7 @@ class Event(EventBase):
     id: int
     is_active: bool
     created_at: datetime
+    user_id: int
     updated_at: Optional[datetime] = None
     attendees: List[User] = []
 

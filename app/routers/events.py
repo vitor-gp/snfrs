@@ -16,7 +16,7 @@ def create_event(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    return crud.create_event(db=db, event=event)
+    return crud.create_event(db=db, event=event, current_user=current_user)
 
 
 @router.get("/", response_model=List[schemas.Event])

@@ -116,8 +116,11 @@ def get_events_by_discord_channel(db: Session, channel_id: str) -> List[models.E
     )
 
 
-def create_event(db: Session, event: schemas.EventCreate) -> models.Event:
-    db_event = models.Event(**event.dict())
+def create_event(db: Session, event: schemas.EventCreate, current_user: models.User) -> models.Event:
+    event_data = event.model_dump()
+    event_data["user_id"] = current_user.id
+
+    db_event = models.Event(**event_data)
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
