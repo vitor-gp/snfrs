@@ -9,6 +9,12 @@ services:
     volumes:
       - ./app:/app/app
       - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/app.db
+      - SECRET_KEY=production-secret-key-change-me
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - ENVIRONMENT=production
     env_file:
       - .env
     restart: unless-stopped

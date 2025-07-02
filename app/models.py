@@ -19,7 +19,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, index=True, nullable=False)  # Name serves as username
     hashed_password = Column(String, nullable=False)
     discord_user_id = Column(String, unique=True, index=True, nullable=True)  # Discord user ID
     discord_username = Column(String, nullable=True)  # Discord username
@@ -30,8 +30,8 @@ class User(Base):
 
     # Relationship to attended events
     attended_events = relationship(
-        "Event", 
-        secondary=user_event_attendance, 
+        "Event",
+        secondary=user_event_attendance,
         back_populates="attendees"
     )
 
@@ -51,7 +51,7 @@ class Event(Base):
 
     # Relationship to attendees
     attendees = relationship(
-        "User", 
-        secondary=user_event_attendance, 
+        "User",
+        secondary=user_event_attendance,
         back_populates="attended_events"
     ) 

@@ -5,35 +5,34 @@ This module contains the main Discord bot implementation for the
 RolêDeQuinta event attendance system.
 """
 
-import os
-import discord
-from discord.ext import commands
-import aiohttp
 import asyncio
-from discord import app_commands
 import logging
 import sys
 
-from .config import BotConfig
-from .cogs.events import EventsCog
+import aiohttp
+import discord
+from discord.ext import commands
+
+from bot.cogs.events import EventsCog
+from bot.config import BotConfig, setup_logging
 
 
-def setup_logging():
-    """Configure comprehensive logging for the Discord bot."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler('/tmp/discord_bot.log')
-        ]
-    )
-    
-    # Set Discord library logging to INFO to see connection details
-    discord_logger = logging.getLogger('discord')
-    discord_logger.setLevel(logging.INFO)
-    
-    return logging.getLogger(__name__)
+async def main():
+    """Main entry point for the Discord bot."""
+    # Initialize configuration and logging
+    config = BotConfig()
+    logger = setup_logging()
+
+    # Create and run the bot
+    bot = SNFRSBot()
+    try:
+        logger.info("🚀 Starting Discord bot application...")
+        await bot.start(config.token)
+    except KeyboardInterrupt:
+        logger.info("🛑 Bot stopped by user (KeyboardInterrupt)")
+    except Exception as e:
+        logger.error(f"❌ Fatal error: {e}")
+        sys.exit(1)
 
 
 class SNFRSBot(commands.Bot):
@@ -97,7 +96,7 @@ class SNFRSBot(commands.Bot):
             self.logger.error(f"❌ API connection failed: {e}")
 
     async def _sync_commands(self):
-        """Sync slash commands both globally and to current guilds."""
+        """Sync slash commands to guilds and globally."""
         try:
             self.logger.info("⚙️ Syncing slash commands...")
             
@@ -119,33 +118,12 @@ class SNFRSBot(commands.Bot):
         except Exception as e:
             self.logger.error(f"❌ Error syncing slash commands: {e}")
 
-    def run_bot(self):
-        """Run the Discord bot."""
-        try:
-            self.logger.info("🤖 Starting Discord bot connection...")
-            self.run(self.config.token)
-        except Exception as e:
-            self.logger.error(f"❌ Error starting bot: {e}")
-            raise
-
-
-async def main():
-    """Main entry point for the Discord bot."""
-    bot = SNFRSBot()
-    try:
-        await bot.start(bot.config.token)
-    except Exception as e:
-        bot.logger.error(f"❌ Error starting bot: {e}")
-        raise
-
 
 if __name__ == "__main__":
     try:
-        logger = setup_logging()
-        logger.info("🚀 Initializing Discord bot application...")
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("🛑 Bot stopped by user (KeyboardInterrupt)")
+        print("🛑 Bot stopped by user")
     except Exception as e:
-        logger.error(f"❌ Fatal error: {e}")
-        exit(1) 
+        print(f"❌ Fatal error: {e}")
+        sys.exit(1) 

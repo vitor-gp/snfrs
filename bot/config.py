@@ -4,36 +4,35 @@ Configuration module for the Discord Bot.
 This module handles all environment variable configuration for the bot.
 """
 
+import logging
 import os
-from typing import Optional
+import sys
+from dataclasses import dataclass
 
 
+@dataclass
 class BotConfig:
-    """Configuration class for Discord Bot environment variables."""
-    
+    """Configuration class for Discord bot settings."""
+
     def __init__(self):
-        """Initialize configuration from environment variables."""
-        self.api_base_url = os.getenv("API_BASE_URL", "http://api:8000")
-        self.token = os.getenv("DISCORD_BOT_TOKEN")
-        self.admin_role = os.getenv("DISCORD_ADMIN_ROLE", "Admin")
-        self.admin_api_token = os.getenv("ADMIN_API_TOKEN", "")
-        
-    @property
-    def is_configured(self) -> bool:
-        """Check if the bot is properly configured."""
-        return bool(self.token)
-    
-    def validate(self) -> None:
-        """Validate that required configuration is present."""
+        """Initialize bot configuration from environment variables."""
+        self.token = os.getenv("DISCORD_TOKEN")
+        self.api_base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+        self.guild_id = os.getenv("DISCORD_GUILD")
+
         if not self.token:
-            raise ValueError("DISCORD_BOT_TOKEN environment variable is required")
-            
-    def __repr__(self) -> str:
-        """String representation of the configuration."""
-        return (
-            f"BotConfig("
-            f"api_base_url='{self.api_base_url}', "
-            f"token_configured={bool(self.token)}, "
-            f"admin_role='{self.admin_role}'"
-            f")"
-        ) 
+            logging.error("❌ DISCORD_TOKEN environment variable is required")
+            raise ValueError("DISCORD_TOKEN environment variable is required")
+
+
+def setup_logging() -> logging.Logger:
+    """Set up logging configuration for the Discord bot."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler('/tmp/discord_bot.log')
+        ]
+    )
+    return logging.getLogger(__name__) 
