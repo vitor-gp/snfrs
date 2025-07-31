@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+# Set work directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r discorduser && useradd -r -g discorduser discorduser
+
+# Install Discord bot dependencies
+COPY requirements.discord.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.discord.txt
+
+# Copy Discord bot package
+COPY bot/ /app/bot/
+
+# Change ownership to non-root user
+RUN chown -R discorduser:discorduser /app
+USER discorduser
+
+# Health check for Discord bot
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python -c "import asyncio; import aiohttp; asyncio.run(aiohttp.ClientSession().get('${API_BASE_URL:-http://api:8000}/health').close())" || exit 1
+
+# Run the Discord bot using the new structure
+CMD ["python", "bot/run.py"] 

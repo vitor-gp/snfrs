@@ -62,7 +62,7 @@ def read_events_by_discord_channel(
     return events
 
 
-@router.get("/{event_id}", response_model=schemas.EventWithAttendees)
+@router.get("/{event_id}", response_model=schemas.Event)
 def read_event(
     event_id: int,
     db: Session = Depends(get_db),

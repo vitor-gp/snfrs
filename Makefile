@@ -8,9 +8,15 @@ help:
 	@echo "  test        - Run tests"
 	@echo "  lint        - Run linting tools"
 	@echo "  clean       - Clean up temporary files"
-	@echo "  docker-build- Build Docker image"
-	@echo "  docker-run  - Run production container"
-	@echo "  docker-dev  - Run development container"
+	@echo "  db-reset    - Reset database files"
+	@echo "  setup-env   - Setup environment variables (.env file)"
+	@echo "  setup-dev   - Setup development environment"
+	@echo "  setup-docker- Setup Docker environment"
+	@echo "  docker-build- Build Docker images"
+	@echo "  docker-run  - Run production containers (API + Discord bot)"
+	@echo "  docker-dev  - Run development containers (API + Discord bot)"
+	@echo "  docker-run-api - Run only API container"
+	@echo "  docker-run-discord - Run only Discord bot container"
 
 # Install dependencies
 install:
@@ -48,19 +54,41 @@ clean:
 
 # Docker commands
 docker-build:
-	docker-compose build
+	docker compose build
 
-docker-run:
-	docker-compose up api
+docker-run: docker-build
+	docker compose up api discord-bot
 
-docker-dev:
-	docker-compose up api-dev
+docker-dev: docker-build
+	docker compose up api-dev discord-bot-dev
+
+docker-run-api:
+	docker compose up api
+
+docker-run-discord:
+	docker compose up discord-bot
 
 docker-down:
-	docker-compose down
+	docker compose down
+
+# Database commands
+db-reset:
+	rm -f data/*.db
+	@echo "Database files removed. The application will create new ones on startup."
+
+# Environment setup
+setup-env:
+	./setup-env.sh
 
 # Setup development environment
-setup-dev: install
+setup-dev: install setup-env db-reset
 	mkdir -p data
 	@echo "Development environment setup complete!"
-	@echo "Run 'make dev' to start the development server" 
+	@echo "Run 'make dev' to start the development server"
+
+# Setup Docker environment
+setup-docker: docker-build setup-env
+	mkdir -p data
+	@echo "Docker environment setup complete!"
+	@echo "Run 'make docker-run' to start production containers"
+	@echo "Run 'make docker-dev' to start development containers"
