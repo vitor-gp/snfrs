@@ -35,6 +35,11 @@ class User(Base):
         back_populates="attendees"
     )
 
+    created_events = relationship(
+        "Event",
+        back_populates="creator"
+    )
+
 
 class Event(Base):
     __tablename__ = "events"
@@ -45,6 +50,7 @@ class Event(Base):
     start_time = Column(DateTime(timezone=True), nullable=False)  # Event start time
     end_time = Column(DateTime(timezone=True), nullable=False)    # Event end time
     discord_channel_id = Column(String, nullable=True)  # Discord channel where event happens
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Creator of the event
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -55,3 +61,8 @@ class Event(Base):
         secondary=user_event_attendance,
         back_populates="attended_events"
     ) 
+
+    creator = relationship(
+        "User", 
+        back_populates="created_events"
+    )

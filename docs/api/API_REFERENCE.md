@@ -135,7 +135,7 @@ Create a new event.
 ```json
 {
     "title": "Thursday Tech Meetup",
-    "description": "Weekly technical discussion",
+    "description": "Weekly technical discussion", // Optional
     "start_time": "2024-06-20T19:00:00",
     "end_time": "2024-06-20T21:00:00",
     "discord_channel_id": "123456789012345678"  // Optional
@@ -203,6 +203,7 @@ Get specific event with attendees.
     "discord_channel_id": "123456789012345678",
     "is_active": true,
     "created_at": "2024-06-20T10:00:00",
+    "user_id": 1 //creator's event user_id
     "updated_at": null,
     "attendees": [
         {

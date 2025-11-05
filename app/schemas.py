@@ -80,6 +80,7 @@ class Event(EventBase):
     end_time: datetime
     is_active: bool
     created_at: datetime
+    user_id: int
     updated_at: Optional[datetime] = None
 
     class Config:

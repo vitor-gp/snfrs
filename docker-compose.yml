@@ -52,8 +52,11 @@ services:
       - ./app:/app/app
       - ./data:/app/data
       - ./tests:/app/tests
+      - ./alembic.ini:/app/alembic.ini
+      - ./alembic:/app/alembic
     env_file:
       - .env
+
     environment:
       - DATABASE_URL=sqlite:///./data/app_dev.db
       - SECRET_KEY=dev-secret-key
